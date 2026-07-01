@@ -107,15 +107,18 @@ async function flush(){
   flushing=true;
   let q=queue();
   while(q.length){
-    try{ await jsonp(q[0]); q=queue(); q.shift(); setQueue(q); }       // 成功 → 出列
+    const sent=q[0];              // 這輪要送的那筆；await 期間 enqueue 可能用「同 id 留最新」換掉佇列頭
+    const done=p=>!(p.annotation_id===sent.annotation_id&&p.timestamp===sent.timestamp);  // 只移除剛送的這筆，同 id 新版留著續送（別再盲目 shift 掉沒送的）
+    try{ await jsonp(sent); q=queue().filter(done); setQueue(q); }     // 成功 → 出列
     catch(e){
       if(e&&e.server){            // 伺服器明確拒收這筆 → 移到 dead-letter，別卡死後面整列
         const dl=JSON.parse(localStorage.getItem("taigi_deadletter")||"[]");
-        dl.push({payload:q[0],error:e.error}); localStorage.setItem("taigi_deadletter",JSON.stringify(dl));
-        q=queue(); q.shift(); setQueue(q);
+        dl.push({payload:sent,error:e.error}); localStorage.setItem("taigi_deadletter",JSON.stringify(dl));
+        q=queue().filter(done); setQueue(q);
       } else { break; }           // 傳輸失敗（斷網/逾時）→ 留著下次再送
     }
   }
+  // ponytail: 唯一鍵用 annotation_id+timestamp(ms)；人手連點 ms 不會撞，若日後改機器連發需加遞增序號
   flushing=false; renderSync();
 }
 function renderSync(){
