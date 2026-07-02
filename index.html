@@ -153,7 +153,7 @@ function go(d){ i=Math.max(0,Math.min(ITEMS.length-1,i+d)); render(); cueIt(); }
 // banner 優先序：未填代號 > 未連後端 > 隱藏
 function updateBanner(){
   const b=$("#banner");
-  if(!who()){ b.style.display="block"; b.textContent="⚠ 請先填左上「標注者代號」再開始標。"; }
+  if(!who()){ b.style.display="block"; b.textContent="⚠ 請先填右上「標注者代號」再開始標。"; }
   else if(!ONLINE){ b.style.display="block"; b.textContent="⚠ 未連後端：標註只存這台瀏覽器，記得用「匯出 CSV」回傳。"; }
   else { b.style.display="none"; }
 }
